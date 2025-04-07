@@ -1,0 +1,14 @@
+# list of library dependencies
+# for the project
+
+# instill by running: pip install -r requirements.txt
+# Please update this file with any new dependencies you add to the project
+# and remove any that are no longer needed
+
+#for scanner
+python-nmap
+scapy
+# for querying CVE API
+requests
+#for reporting
+pypdf
