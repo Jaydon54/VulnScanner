@@ -1,5 +1,4 @@
-# main file
-
+# main file that executes the program
 # Imports
 from scanner.scanner import quick_scan, regular_scan, deep_scan  # type: ignore
 
@@ -9,14 +8,20 @@ def main():
     """
 # Target input statement
     scan_type = input("What type of scan would you like to perform? (quick/regular/deep): ").lower()
-    #input validation
-    if scan_type not in ["quick", "regular", "deep"]:
-        print("Invalid scan type. Please choose 'quick', 'regular', or 'deep'.")
+
+    # Scan Type Input Validation
+    while scan_type not in ["quick", "regular", "deep"]:
+        scan_type = input("Invalid scan type. Please choose 'quick', 'regular', or 'deep':").lower()
+        if(scan_type in ["quick", "regular", "deep"]):
+            break
         return
+    
+    # Target input
     target = input("Enter target IP address, subnet, or domain: ")
-    #input validation
+    
+    # Target Input validation
     if not target:
-        print("Please enter a valid target.")
+        target = input("Please enter a valid target:")
         return
 
     # Run the  scan
