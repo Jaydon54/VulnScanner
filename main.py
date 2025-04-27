@@ -1,11 +1,15 @@
 # main file that executes the program
 # Imports
-from scanner.scanner import quick_scan, regular_scan, deep_scan  # type: ignore
+from scanner.scanner import quick_scan, regular_scan, deep_scan
+from database.database import init_db
 
 def main():
     """
     Main function to run the scanner.
     """
+
+    # Initialize the database
+    init_db()
 # Target input statement
     scan_type = input("What type of scan would you like to perform? (quick/regular/deep): ").lower()
 
@@ -25,11 +29,11 @@ def main():
         return
 
     # Run the  scan
-    if(type == "quick"):
+    if(scan_type == "quick"):
         quick_scan(target)
-    elif(type == "regular"):
+    elif(scan_type == "regular"):
         regular_scan(target)
-    elif(type == "deep"):
+    elif(scan_type == "deep"):
         deep_scan(target)
 
 if __name__ == "__main__":

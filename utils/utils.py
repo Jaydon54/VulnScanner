@@ -5,7 +5,7 @@
 
 
 # Util #2: port scanner print module
-#prints all the results of the scan
+#vprints all the info of the scan results
 def print_results(scanner):
     for host in scanner.all_hosts():
         print(f"Host: {host} ({scanner[host].hostname()})") 
@@ -26,3 +26,5 @@ def print_results(scanner):
                 print(f"Port: {port}\tService: {service}", end='\n')
                 if extra_info:
                     print(f"\tExtra Info: {extra_info}", end='')
+
+    
