@@ -8,9 +8,17 @@
 #for scanner
 python-nmap
 scapy
+#for databse 
+import sqlite3
+from datetime import datetime
+from typing import List, Tuple, Optional 
 # for querying CVE API
 requests
+from typing import List, Dict
 #for reporting
-pypdf
+reportlab.lib.pagesizes import letter
+reportlab,pdfgen import canvas
+reportlad.lib import colors
+from typing import List, Dict, Tuple
 #for parsing
 colorama
