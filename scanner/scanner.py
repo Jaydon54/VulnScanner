@@ -6,11 +6,11 @@ import nmap # type: ignore
 from utils.utils import print_results # type: ignore
 from database.database import insert_result
 from PDFReportGenerator.PDFReportGenerator import PDFReportGen
-from CVE_Checker import CVEChecker
+from CVE_Checker.CVE_Checker import CVEChecker
 
 #Objects
 pdf_generator = PDFReportGen()
-cve_checker = CVEChecker()
+CVE_Checker = CVEChecker()
 
 # Quick scan function
 def quick_scan(target):

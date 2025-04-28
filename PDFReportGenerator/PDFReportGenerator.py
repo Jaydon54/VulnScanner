@@ -43,7 +43,7 @@ class PDFReportGen:
             product, version = self.extract_product_version(extra_info)
 
             # Get CVE info
-            cve_info = self.cve_checker.check_scan_result(service, product, version)
+            cve_info = self.CVE_Checker.check_scan_results(service, product, version)
 
             # Organize data nicely
             data = [
