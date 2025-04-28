@@ -1,24 +1,17 @@
-# list of library dependencies
-# for the project
-
-# instill by running: pip install -r requirements.txt
-# Please update this file with any new dependencies you add to the project
-# and remove any that are no longer needed
-
-#for scanner
+# Scanner libraries
 python-nmap
 scapy
-#for databse 
-import sqlite3
-from datetime import datetime
-from typing import List, Tuple, Optional 
-# for querying CVE API
+
+# Database (standard library - no pip install needed):
+# sqlite3
+# datetime
+# typing
+
+# CVE API querying
 requests
-from typing import List, Dict
-#for reporting
-reportlab.lib.pagesizes import letter
-reportlab,pdfgen import canvas
-reportlad.lib import colors
-from typing import List, Dict, Tuple
-#for parsing
+
+# Reporting
+reportlab
+
+# CLI Parsing and Colors
 colorama
