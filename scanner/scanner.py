@@ -40,13 +40,17 @@ def quick_scan(target):
         for host in scanner.all_hosts():
             for proto in scanner[host].all_protocols():
                 ports = scanner[host][proto].keys()
-                for port in ports: 
+                for port in ports:
                     service = scanner[host][proto][port].get('name', 'unknown')
                     state = scanner[host][proto][port].get('state', 'unknown')
                     extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
+        
+                    product, version = pdf_generator.extract_product_version(extra_info)
+                    cve_info = CVE_Checker.check_scan_results(service, product, version)
+                    risk_level = cve_info["risk_level"]
 
-                    #save
-                    insert_result(target, port, service, state, extra_info.strip(), "quick")
+                    insert_result(target, port, service, state, extra_info.strip(), "quick", risk_level)
+
 
         #PDF Report
         pdf_generator.generate_report(target)
@@ -83,13 +87,16 @@ def regular_scan(target):
         for host in scanner.all_hosts():
             for proto in scanner[host].all_protocols():
                 ports = scanner[host][proto].keys()
-                for port in ports: 
+                for port in ports:
                     service = scanner[host][proto][port].get('name', 'unknown')
                     state = scanner[host][proto][port].get('state', 'unknown')
                     extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
+        
+                    product, version = pdf_generator.extract_product_version(extra_info)
+                    cve_info = CVE_Checker.check_scan_results(service, product, version)
+                    risk_level = cve_info["risk_level"]
 
-                    #save
-                    insert_result(target, port, service, state, extra_info.strip(), "regular")
+                    insert_result(target, port, service, state, extra_info.strip(), "regular", risk_level)
 
         #PDF Report
         pdf_generator.generate_report(target)
@@ -125,17 +132,19 @@ def deep_scan(target):
         print("Deep scan results:")    
         print_results(scanner)
 
-        #Save result to database
         for host in scanner.all_hosts():
             for proto in scanner[host].all_protocols():
                 ports = scanner[host][proto].keys()
-                for port in ports: 
+                for port in ports:
                     service = scanner[host][proto][port].get('name', 'unknown')
                     state = scanner[host][proto][port].get('state', 'unknown')
                     extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
+        
+                    product, version = pdf_generator.extract_product_version(extra_info)
+                    cve_info = CVE_Checker.check_scan_results(service, product, version)
+                    risk_level = cve_info["risk_level"]
 
-                    #save
-                    insert_result(target, port, service, state, extra_info.strip(), "deep")
+                    insert_result(target, port, service, state, extra_info.strip(), "deep", risk_level)
 
         #PDF Report
         pdf_generator.generate_report(target)

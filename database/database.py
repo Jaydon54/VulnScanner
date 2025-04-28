@@ -20,39 +20,34 @@ def init_db() -> None:  #table for results and their parameters
     cursor = conn.cursor() #control tool for sending SQL commands to database
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS ScanResults (  
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            target TEXT NOT NULL,
-            port INTEGER NOT NULL,
-            service TEXT,
-            state TEXT,
-            extra_info TEXT,
-            scan_type TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        CREATE TABLE IF NOT EXISTS scan_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        target TEXT NOT NULL,
+        port INTEGER NOT NULL,
+        service TEXT,
+        state TEXT,
+        extra_info TEXT,
+        scan_type TEXT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        risk_level TEXT
+        )
+
         )
     """)  #SQL commands, where each column will be stored
 
     conn.commit() #saves changes to database
     conn.close()
 
-def insert_result( #function for inserting results into database
-    target: str,
-    port: int,
-    service: Optional[str],
-    state: Optional[str],
-    extra_info: Optional[str],
-    scan_type: str
-) -> None:
-    conn = sqlite3.connect(DB_Name) #connects to the SQLite database 
-    cursor = conn.cursor() 
-
+def insert_result(target, port, service, state, extra_info, scan_type, risk_level):
+    conn = sqlite3.connect(DB_Name)
+    cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO ScanResults (target, port, service, state, extra_info, scan_type)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (target, port, service, state, extra_info, scan_type)) #the tuple import will safely insert vales for ?
-
-    conn.commit() 
+        INSERT INTO scan_results (target, port, service, state, extra_info, scan_type, risk_level) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (target, port, service, state, extra_info, scan_type, risk_level),
+    """)
+    conn.commit()
     conn.close()
+
 
 def get_results_by_target(target: str) -> List[Tuple]: #function for getting results from target which returns a list of tuples
     conn = sqlite3.connect(DB_Name) #each tuple contains one row from the database
@@ -83,4 +78,3 @@ def get_results_by_date(start_date: str, end_date: str) -> List[Tuple]: #functio
     results = cursor.fetchall()
     conn.close()
     return results
-
