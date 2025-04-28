@@ -1,85 +1,145 @@
-#database/database.py
-#Code for database that stores scan results goes here
+# scanner/ scanner.py
+# Code for Scanner goes here
 
-import sqlite3                   #built-in module to interact with SQLite databases 
-from datetime import datetime    #Optional is useful for working with timestamps 
-from typing import List, Tuple, Optional #type hints to clarify function inputs & outputs 
+#Imports
+import nmap # type: ignore
+from utils.utils import print_results # type: ignore
+from database.database import insert_result
+from PDFReportGenerator.PDFReportGenerator import PDFReportGen
+from CVE_Checker import CVEChecker
+
+#Objects
+pdf_generator = PDFReportGen()
+cve_checker = CVEChecker()
+
+# Quick scan function
+def quick_scan(target):
+    """
+    Most basic scan option, it only scans the most common ports(FTP, SSh, HTTP, HTTPs).
+    """
+    print(f"Starting quick scan on {target}")
+    scanner = nmap.PortScanner()
+    try:
+        # For quick scan we only scan FTP, SSH, HTTP, and HTTPS ports
+        # (port 8080 added for testing)
+        scanner.scan(hosts=target, ports = '21,22,80,443', arguments='-T4 -Pn')
+
+        print("scan executed.")
+        print("scan info:", scanner.scaninfo())
+
+        # If NO open ports are found
+        if not scanner.all_hosts():
+            print("No open ports were found, would you like to perform a deeper scan?")
+            return
+
+        # If open ports are found
+        print("Quick scan results:")    
+        print_results(scanner)
+
+        #Save result to database
+        for host in scanner.all_hosts():
+            for proto in scanner[host].all_protocols():
+                ports = scanner[host][proto].keys()
+                for port in ports: 
+                    service = scanner[host][proto][port].get('name', 'unknown')
+                    state = scanner[host][proto][port].get('state', 'unknown')
+                    extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
+
+                    #save
+                    insert_result(target, port, service, state, extra_info.strip(), "quick")
+
+        #PDF Report
+        pdf_generator.generate_report(target)
+    # error handling 
+    except nmap.PortScannerError as e:
+        print(f" Scan error: {e}")
+
+#regular scan
+def regular_scan(target):
+    """ 
+    Regular scan option, it scans custom ports (user input) and services.
+    """
+    print(f"Starting regular scan on {target}")
+    scanner = nmap.PortScanner()
+    try:
+        #input ports to be scanned
+        ports = input("Enter the ports to be scanned (eg. 21,22 or 1-1000): ")
+        # sS means stealth scan, T4 = agressive scan(faster), Pn means no ping scan
+        scanner.scan(hosts=target, ports = ports, arguments='-sS -T4 -Pn')
+
+        print("scan executed.")
+        print("scan info:", scanner.scaninfo())
+
+        # If NO open ports are found
+        if not scanner.all_hosts():
+            print("No open ports were found, would you like to perform a deeper scan?")
+            return
+
+        # If open ports are found
+        print("Regular scan results:")    
+        print_results(scanner)
+
+        #Save result to database
+        for host in scanner.all_hosts():
+            for proto in scanner[host].all_protocols():
+                ports = scanner[host][proto].keys()
+                for port in ports: 
+                    service = scanner[host][proto][port].get('name', 'unknown')
+                    state = scanner[host][proto][port].get('state', 'unknown')
+                    extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
+
+                    #save
+                    insert_result(target, port, service, state, extra_info.strip(), "regular")
+
+        #PDF Report
+        pdf_generator.generate_report(target)
+
+    # error handling 
+    except nmap.PortScannerError as e:
+        print(f" Scan error: {e}")
 
 
+    # deep scan
+    #scans all ports and services
+def deep_scan(target):
+    """ 
+        Deep scan option, it scans all ports and services.
+    """
+    print(f"Starting deep scan on {target}")
+    scanner = nmap.PortScanner()
+    try:
+        #scans all ports
+        # added Sv argument to detect service provider and version
+        scanner.scan(hosts=target, ports = '1-65535', arguments='-sS -sV -T4 -Pn')
 
-#--------------------------------
-#Database Configuration
-#--------------------------------
-DB_Name = "scanner_results.db" #name of the SQLite file
+        #displays scan info
+        print("Deep scan executed.")
+        print("scan info:", scanner.scaninfo())
 
-#--------------------------------
-#Database Initialization
-#--------------------------------
-def init_db() -> None:  #table for results and their parameters 
-    conn = sqlite3.connect(DB_Name)  #connects to database file and creates one if doesnt exist
-    cursor = conn.cursor() #control tool for sending SQL commands to database
+        # If NO open ports are found
+        if not scanner.all_hosts():
+            print("No open ports were found, you should be safe!")
+            return
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS ScanResults (  
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            target TEXT NOT NULL,
-            port INTEGER NOT NULL,
-            service TEXT,
-            state TEXT,
-            extra_info TEXT,
-            scan_type TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    """)  #SQL commands, where each column will be stored
+        # If open ports are found
+        print("Deep scan results:")    
+        print_results(scanner)
 
-    conn.commit() #saves changes to database
-    conn.close()
+        #Save result to database
+        for host in scanner.all_hosts():
+            for proto in scanner[host].all_protocols():
+                ports = scanner[host][proto].keys()
+                for port in ports: 
+                    service = scanner[host][proto][port].get('name', 'unknown')
+                    state = scanner[host][proto][port].get('state', 'unknown')
+                    extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
 
-def insert_result( #function for inserting results into database
-    target: str,
-    port: int,
-    service: Optional[str],
-    state: Optional[str],
-    extra_info: Optional[str],
-    scan_type: str
-) -> None:
-    conn = sqlite3.connect(DB_Name) #connects to the SQLite database 
-    cursor = conn.cursor() 
+                    #save
+                    insert_result(target, port, service, state, extra_info.strip(), "deep")
 
-    cursor.execute("""
-        INSERT INTO ScanResults (target, port, service, state, extra_info, scan_type)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (target, port, service, state, extra_info, scan_type)) #the tuple import will safely insert vales for ?
+        #PDF Report
+        pdf_generator.generate_report(target)
 
-    conn.commit() 
-    conn.close()
-
-def get_results_by_target(target: str) -> List[Tuple]: #function for getting results from target which returns a list of tuples
-    conn = sqlite3.connect(DB_Name) #each tuple contains one row from the database
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT * FROM ScanResults  
-        WHERE target = ?    
-        ORDER BY timestamp DESC 
-    """, (target,)) #get all columns
-                    #filters rows for where target matches
-                    #sort results from newest to oldest by descendig
-                    #target, is a 1 element tuple whicch is why the comma is used
-    results = cursor.fetchall() #retrieves all rows returned by the query and they become a tuple within the list
-    conn.close()
-    return results  #returns results to where the function was called
-
-def get_results_by_date(start_date: str, end_date: str) -> List[Tuple]: #function for retriving results by date also returning as a tuple
-    conn = sqlite3.connect(DB_Name)
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT * FROM ScanResults
-        WHERE DATE(timestamp) BETWEEN DATE(?) AND DATE(?)
-        ORDER BY timestamp DESC
-    """, (start_date, end_date)) #fetches results from a specific date interval showing the most recent first
-
-    results = cursor.fetchall()
-    conn.close()
-    return results
+    # error handling 
+    except nmap.PortScannerError as e:
+        print(f" Scan error: {e}")
