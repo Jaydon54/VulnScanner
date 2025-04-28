@@ -1,4 +1,4 @@
-import requests         #python library that allows http requests 
+import requests #type:ignore        #python library that allows http requests 
 from typing import List, Dict #since API returns JSON objects, allows clarification for return types 
 
 #----------------------------------------------------------

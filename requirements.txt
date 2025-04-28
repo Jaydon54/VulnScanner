@@ -10,6 +10,7 @@ scapy
 # CVE API querying
 requests
 
+db-sqlite3
 # Reporting
 reportlab
 
