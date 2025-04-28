@@ -2,8 +2,8 @@ from reportlab.lib.pagesizes import letter  #sets pdf size to satndars US letter
 from reportlab.pdfgen import canvas #drawing board for report
 from reportlab.lib import colors    #color for headers,tables,etc
 from typing import List, Dict, Tuple   #type hints for clean code
-from database import get_results_by_target  #pulls scan results form database
-from CVE_Checker import CVEChecker  #pulls CVEChecker class
+from database.database import get_results_by_target  #pulls scan results form database
+from CVE_Checker.CVE_Checker import CVEChecker  #pulls CVEChecker class
 
 #------------------------------------------------
 # Class Initialization
