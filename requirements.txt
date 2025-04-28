@@ -12,3 +12,5 @@ scapy
 requests
 #for reporting
 pypdf
+#for parsing
+colorama
