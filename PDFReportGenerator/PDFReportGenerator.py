@@ -79,13 +79,13 @@ class PDFReportGen:
 
     #-----------------------------------------------------------
     def extract_product_version(self, extra_info: str) -> Tuple[str, str]:  #method for extrating product version
-        if not extra_info:
+        if not extra_info:  #if extra info is empty then return two empty strings
             return "", ""
 
-        parts = extra_info.split()
-        if len(parts) >= 2:
+        parts = extra_info.split()  #splits a string into a list of words based on spaces
+        if len(parts) >= 2:         #handles product and version based on spacing 
             product = " ".join(parts[:-1])  # all parts except the last one
             version = parts[-1]             # last part assumed to be the version
             return product, version
-        else:
+        else:   #handles weird cases
             return extra_info, ""
