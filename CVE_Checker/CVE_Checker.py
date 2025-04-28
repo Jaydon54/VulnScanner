@@ -1,4 +1,4 @@
-import requests #type:ignore        #python library that allows http requests 
+import requests         #python library that allows http requests 
 from typing import List, Dict #since API returns JSON objects, allows clarification for return types 
 
 #----------------------------------------------------------
@@ -40,3 +40,24 @@ class CVEChecker:
             "cves": [cve["id"] for cve in cves],    #IDs of matching vulnerabilities
             "risk_level": risk_level
         }
+    
+    #-------------------------------------------------------------
+    def calculate_risk_level(self, cves: List[Dict]) -> str: #method for detemrining risk level
+        if not cves:
+            return "Low"  # No vulnerabilities found = low risk
+
+        max_cvss = 0
+        for cve in cves:
+            cvss_score = cve.get("cvss", 0)  # If "cvss" not found then default to 0
+            if cvss_score > max_cvss:
+                max_cvss = cvss_score  # Track the highest (worst) CVSS score
+
+        #Assign risk based on the highest CVSS score found
+        if max_cvss >= 9.0:
+            return "Critical"
+        elif max_cvss >= 7.0:
+            return "High"
+        elif max_cvss >= 4.0:
+            return "Medium"
+        else:
+            return "Low"
