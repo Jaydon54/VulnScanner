@@ -8,7 +8,7 @@ from utils.utils import print_results # type: ignore
 # Quick scan function
 def quick_scan(target):
     """
-    Most basic scan option, it only scans the most common ports.
+    Most basic scan option, it only scans the most common ports(FTP, SSh, HTTP, HTTPs).
     """
     print(f"Starting quick scan on {target}")
     scanner = nmap.PortScanner()
@@ -42,9 +42,7 @@ def regular_scan(target):
     try:
         #input ports to be scanned
         ports = input("Enter the ports to be scanned (eg. 21,22 or 1-1000): ")
-        # sS means stealth scan
-        # T4 = agressive scan(faster)
-        # Pn means no ping scan
+        # sS means stealth scan, T4 = agressive scan(faster), Pn means no ping scan
         scanner.scan(hosts=target, ports = ports, arguments='-sS -T4 -Pn')
 
         print("scan executed.")

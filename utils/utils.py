@@ -1,11 +1,8 @@
  # utils/utils.py
-# Code for utility functions goes here
-
-# Util #1: Input Validation
-
+# Code for reusable utility functions goes here
 
 # Util #2: port scanner print module
-#vprints all the info of the scan results
+#vprints all the info of the scan results used in all the scanner funcitons
 def print_results(scanner):
     for host in scanner.all_hosts():
         print(f"Host: {host} ({scanner[host].hostname()})") 
