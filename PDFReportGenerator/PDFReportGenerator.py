@@ -1,3 +1,4 @@
+
 # reports/pdf_generator.py
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -5,66 +6,73 @@ from typing import List, Tuple
 from database.database import get_results_by_target
 from CVE_Checker.CVE_Checker import CVEChecker
 
-api_key = "835093cb-2fed-4d1b-af78-ad31e17e29e0" 
-
 class PDFReportGen:
-    def __init__(self, api_key):
-        self.CVE_Checker = CVEChecker(api_key)
+    def __init__(self):
+        self.CVE_Checker = CVEChecker()
 
     def generate_report(self, target: str, filename: str = "scan_report.pdf") -> None:
-        results = get_results_by_target(target)
-
-        if not results:
-            print(f"No scan results found for {target}.")
-            return
-        
-        pdf = canvas.Canvas(filename, pagesize=letter)
+        c = canvas.Canvas(filename, pagesize=letter)
         width, height = letter
-        y = height - 50
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(200, 750, "Network Vulnerability Report")
 
-        pdf.setFont("Helvetica-Bold", 18)
-        pdf.drawString(50, y, f"Vulnerability Scan Report for {target}")
-        y -= 30
+        c.setFont("Helvetica", 12)
+        c.drawString(50, 720, f"Target: {target}")
+        
+        y_position = 680
 
         headers = ["Port", "Service", "Product", "Version", "State", "CVEs", "Risk Level"]
-        pdf.setFont("Helvetica-Bold", 12)
-        for i, header in enumerate(headers):
-            pdf.drawString(50 + i * 80, y, header)
-        y -= 20
-        pdf.setFont("Helvetica", 10)
+        column_positions = [50, 100, 170, 270, 370, 430, 530]
 
-        for row in results:
-            _, target, port, service, state, extra_info, scan_type, timestamp, risk_level = row
-            product, version = self.extract_product_version(extra_info)
+        # Draw table headers
+        c.setFont("Helvetica-Bold", 10)
+        for header, x in zip(headers, column_positions):
+            c.drawString(x, y_position, header)
+        y_position -= 20
 
-            cve_info = self.CVE_Checker.check_scan_results(service, product, version)
+        c.setFont("Helvetica", 9)
 
-            data = [
-                str(port),
-                service or "-",
-                product or "-",
-                version or "-",
-                state or "-",
-                ", ".join(cve_info["cves"]) or "None",
-                risk_level
-            ]
+        results = self.extract_report_data(target)
 
-            for i, item in enumerate(data):
-                pdf.drawString(50 + i * 80, y, item)
+        for result in results:
+            if y_position < 100:  # If near bottom, create new page
+                c.showPage()
+                c.setFont("Helvetica-Bold", 10)
+                for header, x in zip(headers, column_positions):
+                    c.drawString(x, 750, header)
+                y_position = 730
+                c.setFont("Helvetica", 9)
 
-            y -= 20
+            port, service, product, version, state, cves, risk_level = result
 
-            if y < 100:
-                pdf.showPage()
-                y = height - 50
-                pdf.setFont("Helvetica-Bold", 12)
-                for i, header in enumerate(headers):
-                    pdf.drawString(50 + i * 80, y, header)
-                y -= 20
-                pdf.setFont("Helvetica", 10)
+            cves_display = cves if len(cves) <= 40 else cves[:37] + "..."
 
-        pdf.save()
+            row_data = [str(port), service, product, version, state, cves_display, risk_level]
+
+            for data, x in zip(row_data, column_positions):
+                c.drawString(x, y_position, data)
+
+            y_position -= 20
+
+        c.save()
         print(f"PDF report generated: {filename}")
+
+    def extract_report_data(self, target: str) -> List[Tuple]:
+        """
+        Fetch results from database and structure them for PDF report.
+        """
+        raw_results = get_results_by_target(target)
+        report_data = []
+
+        for row in raw_results:
+            id, target, port, service, state, extra_info, scan_type, timestamp, risk_level = row
+            # Parse extra_info into product and version
+            product, version = self.extract_product_version(extra_info)
+            # For CVEs: Placeholder until real implementation
+            cves = "None"  # You can replace with actual CVE lookup if desired
+
+            report_data.append((port, service, product, version, state, cves, risk_level))
+        return report_data
 
     def extract_product_version(self, extra_info: str) -> Tuple[str, str]:
         if not extra_info:
