@@ -40,16 +40,20 @@ def quick_scan(target):
         for host in scanner.all_hosts():
             for proto in scanner[host].all_protocols():
                 ports = scanner[host][proto].keys()
-                for port in ports:
+                for port in ports: 
                     service = scanner[host][proto][port].get('name', 'unknown')
                     state = scanner[host][proto][port].get('state', 'unknown')
-                    extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
-        
+                    product = scanner[host][proto][port].get('product', '')
+                    version = scanner[host][proto][port].get('version', '')
+                    extra_info = f"{product} {version}".strip()
+                
+                    # Get risk level from CVE checker
                     product, version = pdf_generator.extract_product_version(extra_info)
                     cve_info = CVE_Checker.check_scan_results(service, product, version)
                     risk_level = cve_info["risk_level"]
-
-                    insert_result(target, port, service, state, extra_info.strip(), "quick", risk_level)
+                
+                    # Save with risk level
+                    insert_result(target, port, service, state, extra_info, "quick", risk_level)
 
 
         #PDF Report
@@ -87,16 +91,22 @@ def regular_scan(target):
         for host in scanner.all_hosts():
             for proto in scanner[host].all_protocols():
                 ports = scanner[host][proto].keys()
-                for port in ports:
+                for port in ports: 
                     service = scanner[host][proto][port].get('name', 'unknown')
                     state = scanner[host][proto][port].get('state', 'unknown')
-                    extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
-        
-                    product, version = pdf_generator.extract_product_version(extra_info)
-                    cve_info = CVE_Checker.check_scan_results(service, product, version)
-                    risk_level = cve_info["risk_level"]
-
-                    insert_result(target, port, service, state, extra_info.strip(), "regular", risk_level)
+                    product = scanner[host][proto][port].get('product', '')
+                    version = scanner[host][proto][port].get('version', '')
+                    extra_info = f"{product} {version}".strip()
+                
+                    # Get risk level from CVE checker
+                    if product and version:
+                        cve_info = CVE_Checker.check_scan_results(service, product, version)
+                        risk_level = cve_info["risk_level"]
+                    else:
+                        risk_level = "Unknown"
+                
+                    # Save with risk level
+                    insert_result(target, port, service, state, extra_info, "regular", risk_level)
 
         #PDF Report
         pdf_generator.generate_report(target)
@@ -135,16 +145,22 @@ def deep_scan(target):
         for host in scanner.all_hosts():
             for proto in scanner[host].all_protocols():
                 ports = scanner[host][proto].keys()
-                for port in ports:
+                for port in ports: 
                     service = scanner[host][proto][port].get('name', 'unknown')
                     state = scanner[host][proto][port].get('state', 'unknown')
-                    extra_info = scanner[host][proto][port].get('product', '') + " " + scanner[host][proto][port].get('version', '')
-        
-                    product, version = pdf_generator.extract_product_version(extra_info)
-                    cve_info = CVE_Checker.check_scan_results(service, product, version)
-                    risk_level = cve_info["risk_level"]
-
-                    insert_result(target, port, service, state, extra_info.strip(), "deep", risk_level)
+                    product = scanner[host][proto][port].get('product', '')
+                    version = scanner[host][proto][port].get('version', '')
+                    extra_info = f"{product} {version}".strip()
+                
+                    # Get risk level from CVE checker
+                    if product and version:
+                        cve_info = CVE_Checker.check_scan_results(service, product, version)
+                        risk_level = CVE_Checker.calculate_risk_level(cve_info)
+                    else:
+                        risk_level = "Unknown"
+                
+                    # Save with risk level
+                    insert_result(target, port, service, state, extra_info, "deep", risk_level)
 
         #PDF Report
         pdf_generator.generate_report(target)
