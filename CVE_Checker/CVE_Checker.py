@@ -12,7 +12,7 @@ class CVEChecker:
         keyword = f"{product} {version}"
         params = {
             "keywordSearch": keyword,
-            "resultsPerPage": 20  # Optional: limit the number of CVEs pulled
+            "resultsPerPage": 20  
         }
         headers = {
             "apiKey": self.api_key
