@@ -57,21 +57,22 @@ class PDFReportGen:
         c.save()
         print(f"PDF report generated: {filename}")
 
-    def extract_report_data(self, target: str) -> List[Tuple]:
-        """
-        Fetch results from database and structure them for PDF report.
-        """
+    def extract_report_data(self, target: str) -> List[Tuple]:     #Fetch results from database and structure them for PDF report.
         raw_results = get_results_by_target(target)
         report_data = []
 
         for row in raw_results:
             id, target, port, service, state, extra_info, scan_type, timestamp, risk_level = row
+
             # Parse extra_info into product and version
             product, version = self.extract_product_version(extra_info)
-            # For CVEs: Placeholder until real implementation
-            cves = "None"  # You can replace with actual CVE lookup if desired
 
+            # Placeholder for CVEs if needed (for now just show 'None')
+            cves = "None"
+
+            # Return exactly 7 fields
             report_data.append((port, service, product, version, state, cves, risk_level))
+
         return report_data
 
     def extract_product_version(self, extra_info: str) -> Tuple[str, str]:
