@@ -93,6 +93,10 @@ class VulnScannerCLI(cmd.Cmd):
     def print_info(self, message):
         print(Fore.CYAN + "[i] " + message)
 
+    
+
+
+
     def do_scan(self, arg):
         """Perform a vulnerability scan: scan [quick|regular|deep] [target]"""
         if not arg:
@@ -142,13 +146,18 @@ class VulnScannerCLI(cmd.Cmd):
                         version = port_data.get('version', '')
                         extra_info = f"{product} {version}".strip()
                         
-                        insert_result(target, port, service, state, extra_info, scan_type)
-                        
+                        cve_info = None
+                        risk_level = "Low"  # Default risk level
                         if product and version:
                             cve_info = self.cve_checker.check_scan_results(service, product, version)
                             if cve_info["cves"]:
-                                self.print_warning(f"Found {len(cve_info['cves'])} CVEs for {product} {version} (Risk: {cve_info['risk_level']})")
-            
+                                risk_level = cve_info["risk_level"]
+                                self.print_warning(f"Found {len(cve_info['cves'])} CVEs for {product} {version} (Risk: {risk_level})")
+
+
+                        insert_result(target, port, service, state, extra_info, scan_type, risk_level)
+                        
+                        
             self.last_scanner = scanner
 
         except nmap.PortScannerError as e:
@@ -209,6 +218,8 @@ class VulnScannerCLI(cmd.Cmd):
             print(f"State: {Fore.GREEN if result[4] == 'open' else Fore.RED}{result[4]}")
             print(f"Scan Type: {Fore.YELLOW}{result[6]}")
             print(f"Timestamp: {Fore.CYAN}{result[7]}")
+            print(f"Risk Level: {Fore.RED if result[8] == 'Critical' else Fore.YELLOW if result[8] == 'High' else Fore.GREEN}{result[8]}")
+
             if result[5]:  # Extra info
                 print(f"Details: {result[5]}")
             print(Fore.CYAN + "-" * 80)
