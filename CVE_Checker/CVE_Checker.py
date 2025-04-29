@@ -15,6 +15,9 @@ class CVEChecker:
             if response.status_code == 200:
                 data = response.json()
                 return data.get("results", [])
+            elif response.status_code == 404:
+                print(f"404 Not Found: No CVE data found for {product} {version}")
+                return []
             else:
                 print(f"Failed to query CVE database: {response.status_code}")
                 return []
