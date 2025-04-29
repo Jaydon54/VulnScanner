@@ -1,58 +1,49 @@
-import requests         #python library that allows http requests 
-from typing import List, Dict #since API returns JSON objects, allows clarification for return types 
+# CVE_Checker/CVE_Checker.py
+import requests
+from typing import List, Dict
 
-#----------------------------------------------------------
-#Class Configuration
-#----------------------------------------------------------
-class CVEChecker: 
-    Base_URL = "https://cve.circl.lu/api/search" #cve databse url
+class CVEChecker:
+    Base_URL = "https://cve.circl.lu/api/search"
 
-    def __init__(self): 
+    def __init__(self):
         pass
 
-    #----------------------------------------------------------     #inputs products and version because we ned both to be specific
-    def query_cve(self, product: str, version: str) -> List[Dict]:    #method for querying cve returning a list of CVE dictionaries 
-        url = f"{self.Base_URL}/{product}/{version}" #api request with product and version as parameters
-                                                     #f is a formatting keyword
+    def query_cve(self, product: str, version: str) -> List[Dict]:
+        url = f"{self.Base_URL}/{product}/{version}"
         try:
-            response = requests.get(url, timeout=10) #error catching block with 10 second limit to avoid hanging forever
-            if response.status_code == 200: #200 is http success code so we move foward
-                data = response.json()      #this converts reply into a pythin dictionary since cve server is JSON format
-                return data.get("results", [1]) #pulls the results section out and if anything missing the list is empty so program does not crash
-            
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("results", [])
             else:
-                print(f"Failed to query CVE databse: {response.status_code}") #print error message with code and return empty list
+                print(f"Failed to query CVE database: {response.status_code}")
                 return []
-            
-        except Exception as e:                  #if anything goes wrong then we print error and return empty list
+        except Exception as e:
             print(f"Error during CVE query: {e}")
             return []
-        
-    #----------------------------------------------------------
-    def check_scan_results(self, service: str, product: str, version: str) -> Dict: #method for risk assesing after scan result 
-        cves = self.query_cve(product, version) #list of vulnerability results using query cves method
-        risk_level = self.calculate_risk_level(cves)    #risk level using calc risk level method
 
-        return {                    #returns a dictionary containing:
+    def check_scan_results(self, service: str, product: str, version: str) -> Dict:
+        cves = self.query_cve(product, version)
+        risk_level = self.calculate_risk_level(cves)
+
+        return {
             "service": service,
             "product": product,
-            "version": version, 
-            "cves": [cve["id"] for cve in cves],    #IDs of matching vulnerabilities
+            "version": version,
+            "cves": [cve.get("id", "unknown") for cve in cves],
             "risk_level": risk_level
         }
-    
-    #-------------------------------------------------------------
-    def calculate_risk_level(self, cves: List[Dict]) -> str: #method for detemrining risk level
+
+    def calculate_risk_level(self, cves: List[Dict]) -> str:
         if not cves:
-            return "Low"  # No vulnerabilities found = low risk
+            return "Low"
 
         max_cvss = 0
         for cve in cves:
-            cvss_score = cve.get("cvss", 0)  # If "cvss" not found then default to 0
+            cvss_score = cve.get("cvss", 0)
             if cvss_score > max_cvss:
-                max_cvss = cvss_score  # Track the highest (worst) CVSS score
+                max_cvss = cvss_score
 
-        #Assign risk based on the highest CVSS score found
         if max_cvss >= 9.0:
             return "Critical"
         elif max_cvss >= 7.0:
