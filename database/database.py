@@ -7,66 +7,82 @@ from typing import List, Tuple, Optional #type hints to clarify function inputs 
 
 
 
-#--------------------------------
-#Database Configuration
-#--------------------------------
-DB_Name = "scanner_results.db" #name of the SQLite file
+import sqlite3
+from typing import List, Tuple
 
-#--------------------------------
-#Database Initialization
-#--------------------------------
-def init_db() -> None:  #table for results and their parameters 
-    conn = sqlite3.connect(DB_Name)  #connects to database file and creates one if doesnt exist
-    cursor = conn.cursor() #control tool for sending SQL commands to database
+# Database name
+DB_NAME = "scanner_results.db"
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS scan_results (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        target TEXT NOT NULL,
-        port INTEGER NOT NULL,
-        service TEXT,
-        state TEXT,
-        extra_info TEXT,
-        scan_type TEXT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        risk_level TEXT
+#----------------------------------------------------------
+# Create database connection
+#----------------------------------------------------------
+def create_connection():
+    try:
+        conn = sqlite3.connect(DB_NAME)
+        return conn
+    except sqlite3.Error as e:
+        print(f"Database connection error: {e}")
+        return None
+
+#----------------------------------------------------------
+# Create the scan_results table if it doesn't exist
+#----------------------------------------------------------
+def create_table():
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS scan_results (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                target TEXT NOT NULL,
+                port INTEGER NOT NULL,
+                service TEXT,
+                state TEXT,
+                extra_info TEXT,
+                scan_type TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                risk_level TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+#----------------------------------------------------------
+# Insert a scan result into the database
+#----------------------------------------------------------
+def insert_result(target: str, port: int, service: str, state: str, extra_info: str, scan_type: str, risk_level: str):
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO scan_results (target, port, service, state, extra_info, scan_type, risk_level) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (target, port, service, state, extra_info, scan_type, risk_level)
         )
+        conn.commit()
+        conn.close()
 
+#----------------------------------------------------------
+# Retrieve all results for a specific target
+#----------------------------------------------------------
+def get_results_by_target(target: str) -> List[Tuple]:
+    conn = create_connection()
+    if conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT * FROM scan_results WHERE target = ?",
+            (target,)
         )
-    """)  #SQL commands, where each column will be stored
+        rows = cursor.fetchall()
+        conn.close()
+        return rows
+    return []
 
-    conn.commit() #saves changes to database
-    conn.close()
-
-def insert_result(target, port, service, state, extra_info, scan_type, risk_level):
-    conn = sqlite3.connect(DB_Name)
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO scan_results (target, port, service, state, extra_info, scan_type, risk_level) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (target, port, service, state, extra_info, scan_type, risk_level),
-    )
-    conn.commit()
-    conn.close()
-
-
-def get_results_by_target(target: str) -> List[Tuple]: #function for getting results from target which returns a list of tuples
-    conn = sqlite3.connect(DB_Name) #each tuple contains one row from the database
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT * FROM scan_results  
-        WHERE target = ?    
-        ORDER BY timestamp DESC 
-    """, (target,)) #get all columns
-                    #filters rows for where target matches
-                    #sort results from newest to oldest by descendig
-                    #target, is a 1 element tuple whicch is why the comma is used
-    results = cursor.fetchall() #retrieves all rows returned by the query and they become a tuple within the list
-    conn.close()
-    return results  #returns results to where the function was called
+#----------------------------------------------------------
+# Retrieve all results for a specific scan date (YYYY-MM-DD)
+#----------------------------------------------------------
 
 def get_results_by_date(start_date: str, end_date: str) -> List[Tuple]: #function for retriving results by date also returning as a tuple
-    conn = sqlite3.connect(DB_Name)
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
 
     cursor.execute("""
