@@ -8,9 +8,16 @@ from database.database import insert_result
 from PDFReportGenerator.PDFReportGenerator import PDFReportGen
 from CVE_Checker.CVE_Checker import CVEChecker
 
+api_key = "835093cb-2fed-4d1b-af78-ad31e17e29e0"
+
 #Objects
-pdf_generator = PDFReportGen()
-CVE_Checker = CVEChecker()
+pdf_generator = PDFReportGen(api_key)
+CVE_Checker = CVEChecker(api_key)
+
+# port heuristics
+use_port_heuristics = True
+
+dangerous_ports = [21, 23, 512, 513, 514, 139, 445]
 
 # Quick scan function
 def quick_scan(target):
@@ -22,7 +29,7 @@ def quick_scan(target):
     try:
         # For quick scan we only scan FTP, SSH, HTTP, and HTTPS ports
         # (port 8080 added for testing)
-        scanner.scan(hosts=target, ports = '21,22,80,443', arguments='-T4 -Pn -sV')
+        scanner.scan(hosts=target, ports = '21,22,80,443', arguments='-sS -T4 -Pn -sV')
 
         print("scan executed.")
         print("scan info:", scanner.scaninfo())
@@ -47,11 +54,25 @@ def quick_scan(target):
                     version = scanner[host][proto][port].get('version', '')
                     extra_info = f"{product} {version}".strip()
                 
+
                     # Get risk level from CVE checker
-                    product, version = pdf_generator.extract_product_version(extra_info)
-                    cve_info = CVE_Checker.check_scan_results(service, product, version)
-                    risk_level = cve_info["risk_level"]
+                    print(f"[DEBUG] Querying NVD: Product={product}, Version={version}")
+                    if product:
+                        cve_info = CVE_Checker.check_scan_results(service, product, version)
+                        risk_level = cve_info["risk_level"]
+
+                        if cve_info["cves"]:
+                            cve_list = ', '.join(cve_info["cves"])
+                            extra_info += f" | CVEs: {cve_list}"
+
+                        
+                    else:
+                        risk_level = "Unknown"
                 
+                    if use_port_heuristics and port in dangerous_ports:
+                            if risk_level == "Low":
+                                risk_level = "High"
+
                     # Save with risk level
                     insert_result(target, port, service, state, extra_info, "quick", risk_level)
 
@@ -78,7 +99,7 @@ def regular_scan(target):
         print("scan executed.")
         print("scan info:", scanner.scaninfo())
 
-        # If NO open ports are found
+        # If NO open ports are found    
         if not scanner.all_hosts():
             print("No open ports were found, would you like to perform a deeper scan?")
             return
@@ -99,12 +120,23 @@ def regular_scan(target):
                     extra_info = f"{product} {version}".strip()
                 
                     # Get risk level from CVE checker
-                    if product and version:
+                    print(f"[DEBUG] Querying NVD: Product={product}, Version={version}")
+
+                    if product:
                         cve_info = CVE_Checker.check_scan_results(service, product, version)
                         risk_level = cve_info["risk_level"]
+
+                        if cve_info["cves"]:
+                            cve_list = ', '.join(cve_info["cves"])
+                            extra_info += f" | CVEs: {cve_list}"
+                        
                     else:
                         risk_level = "Unknown"
                 
+                    if use_port_heuristics and port in dangerous_ports:
+                            if risk_level == "Low":
+                                risk_level = "High"
+
                     # Save with risk level
                     insert_result(target, port, service, state, extra_info, "regular", risk_level)
 
@@ -152,13 +184,25 @@ def deep_scan(target):
                     version = scanner[host][proto][port].get('version', '')
                     extra_info = f"{product} {version}".strip()
                 
+                    # Debug print
+                    print(f"[DEBUG] Querying NVD: Product={product}, Version={version}")
+
                     # Get risk level from CVE checker
-                    if product and version:
+                    if product:
                         cve_info = CVE_Checker.check_scan_results(service, product, version)
-                        risk_level = CVE_Checker.calculate_risk_level(cve_info)
+                        risk_level = cve_info["risk_level"]
+
+                        if cve_info["cves"]:
+                            cve_list = ', '.join(cve_info["cves"])
+                            extra_info += f" | CVEs: {cve_list}"
+
                     else:
                         risk_level = "Unknown"
                 
+                    if use_port_heuristics and port in dangerous_ports:
+                            if risk_level == "Low":
+                                risk_level = "High"
+
                     # Save with risk level
                     insert_result(target, port, service, state, extra_info, "deep", risk_level)
 

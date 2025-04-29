@@ -14,6 +14,8 @@ from utils.utils import print_results as utils_print_results
 from PDFReportGenerator.PDFReportGenerator import PDFReportGen
 from CVE_Checker.CVE_Checker import CVEChecker
 
+api_key = "835093cb-2fed-4d1b-af78-ad31e17e29e0" 
+
 # Initialize colorama
 init(autoreset=True)
 
@@ -38,13 +40,13 @@ def show_banner():
 class VulnScannerCLI(cmd.Cmd):
     prompt = Fore.MAGENTA + 'vulnscanner > ' + Style.RESET_ALL
 
-    def __init__(self):
+    def __init__(self, api_key):
         super().__init__()
         init_db()
         self.current_target = None
         self.last_scanner = None
-        self.cve_checker = CVEChecker()
-        self.pdf_gen = PDFReportGen()
+        self.cve_checker = CVEChecker(api_key)
+        self.pdf_gen = PDFReportGen(api_key)
         self.clear_screen()
         show_banner()
         self.show_quick_menu()
@@ -148,8 +150,12 @@ class VulnScannerCLI(cmd.Cmd):
                         
                         cve_info = None
                         risk_level = "Low"  # Default risk level
-                        if product and version:
+                        if product:
+
+                            print(f"[DEBUG] Querying NVD: Product={product}, Version={version}")
+
                             cve_info = self.cve_checker.check_scan_results(service, product, version)
+
                             if cve_info["cves"]:
                                 risk_level = cve_info["risk_level"]
                                 self.print_warning(f"Found {len(cve_info['cves'])} CVEs for {product} {version} (Risk: {risk_level})")
@@ -263,7 +269,7 @@ class VulnScannerCLI(cmd.Cmd):
 
 if __name__ == '__main__':
     try:
-        VulnScannerCLI().cmdloop()
+        VulnScannerCLI(api_key).cmdloop()
     except KeyboardInterrupt:
         print(Fore.RED + "\n\nKeyboard Interrupt detected. Exiting..." + Style.RESET_ALL)
         sys.exit(0)
