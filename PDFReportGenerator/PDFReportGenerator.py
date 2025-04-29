@@ -7,8 +7,8 @@ from database.database import get_results_by_target
 from CVE_Checker.CVE_Checker import CVEChecker
 
 class PDFReportGen:
-    def __init__(self):
-        self.CVE_Checker = CVEChecker()
+    def __init__(self, api_key):
+        self.CVE_Checker = CVEChecker(api_key)
 
     def generate_report(self, target: str, filename: str = "scan_report.pdf") -> None:
         c = canvas.Canvas(filename, pagesize=letter)
