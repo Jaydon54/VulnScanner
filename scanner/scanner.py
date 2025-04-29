@@ -22,7 +22,7 @@ def quick_scan(target):
     try:
         # For quick scan we only scan FTP, SSH, HTTP, and HTTPS ports
         # (port 8080 added for testing)
-        scanner.scan(hosts=target, ports = '21,22,80,443', arguments='-T4 -Pn')
+        scanner.scan(hosts=target, ports = '21,22,80,443', arguments='-T4 -Pn -sV')
 
         print("scan executed.")
         print("scan info:", scanner.scaninfo())
@@ -73,7 +73,7 @@ def regular_scan(target):
         #input ports to be scanned
         ports = input("Enter the ports to be scanned (eg. 21,22 or 1-1000): ")
         # sS means stealth scan, T4 = agressive scan(faster), Pn means no ping scan
-        scanner.scan(hosts=target, ports = ports, arguments='-sS -T4 -Pn')
+        scanner.scan(hosts=target, ports = ports, arguments='-sS -T4 -Pn -sV')
 
         print("scan executed.")
         print("scan info:", scanner.scaninfo())
