@@ -2,6 +2,8 @@
 # Code for Scanner goes here
 
 #Imports
+import os
+import sys
 import nmap # type: ignore
 from utils.utils import print_results # type: ignore
 from database.database import insert_result
@@ -9,6 +11,18 @@ from PDFReportGenerator.PDFReportGenerator import PDFReportGen
 from CVE_Checker.CVE_Checker import CVEChecker
 
 api_key = "835093cb-2fed-4d1b-af78-ad31e17e29e0"
+
+
+# I used AI for this if/else logic - jaydon
+#    I was having trouble getting nmap to be installed in the .exe file
+if getattr(sys, 'frozen', False):
+    # Running from bundled executable
+    nmap_path = os.path.join(sys._MEIPASS, 'nmap', 'nmap.exe')
+else:
+    #running in development
+    nmap_path = os.path.join(os.path.dirname(__file__), 'nmap', 'nmap.exe')
+
+nmap.PortScanner()._nmap_path = nmap_path
 
 #Objects
 pdf_generator = PDFReportGen(api_key)
@@ -25,7 +39,7 @@ def quick_scan(target):
     Most basic scan option, it only scans the most common ports(FTP, SSh, HTTP, HTTPs).
     """
     print(f"Starting quick scan on {target}")
-    scanner = nmap.PortScanner()
+    scanner = nmap.PortScanner(nmap_search_path=(nmap_path,))
     try:
         # For quick scan we only scan FTP, SSH, HTTP, and HTTPS ports
         # (port 8080 added for testing)
@@ -89,7 +103,7 @@ def regular_scan(target):
     Regular scan option, it scans custom ports (user input) and services.
     """
     print(f"Starting regular scan on {target}")
-    scanner = nmap.PortScanner()
+    scanner = nmap.PortScanner(nmap_search_path=(nmap_path,))
     try:
         #input ports to be scanned
         ports = input("Enter the ports to be scanned (eg. 21,22 or 1-1000): ")
@@ -155,7 +169,7 @@ def deep_scan(target):
         Deep scan option, it scans all ports and services.
     """
     print(f"Starting deep scan on {target}")
-    scanner = nmap.PortScanner()
+    scanner = nmap.PortScanner(nmap_search_path=(nmap_path,))
     try:
         #scans all ports
         # added Sv argument to detect service provider and version
